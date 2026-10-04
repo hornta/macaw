@@ -1,0 +1,63 @@
+# Macaw settings. Changes take effect as soon as you save this file.
+
+# Master switch. You can also pause Macaw from the tray menu or with Caps Lock + Esc.
+enabled = true
+
+# Which keyboards Macaw changes: "apple" (Apple keyboards only) or "all".
+apply_to = "apple"
+
+# The layout printed on your keyboard: "us" or "other".
+# With "us", Macaw tells you when Windows is typing with a different layout.
+keyboard_layout = "us"
+
+[fn_key]
+# Windows can't see the real fn/globe key, so another key stands in for it:
+# "caps_lock", "right_command" or "none".
+#   stand-in + Backspace = Delete         stand-in + Return = Insert
+#   stand-in + arrows    = Home/End/Page Up/Page Down
+#   stand-in + F1..F12   = brightness, Task View, Search, voice typing,
+#                          notifications, media and volume
+#   stand-in + Esc       = pause or resume Macaw
+stand_in = "caps_lock"
+# What Caps Lock does when pressed on its own:
+#   tap_switches_layout = false - a tap toggles capitals.
+#   tap_switches_layout = true  - a tap switches keyboard layout, like the globe key on a Mac
+#                                 (or macOS's "Use Caps Lock to switch to and from ABC"),
+#                                 and holding Caps Lock alone for a moment toggles capitals.
+tap_switches_layout = false
+# Set to false to never toggle capitals with Caps Lock.
+tap_toggles_caps_lock = true
+# Presses longer than this (milliseconds) count as holding, not tapping.
+tap_timeout_ms = 400
+
+[mac_mode]
+# Mac-style shortcuts: Command acts as Ctrl, plus macOS habits such as
+# Cmd+Tab, Cmd+Q, Option/Cmd+arrows and Cmd+Space.
+enabled = true
+# What Option does with other keys:
+#   "mac_characters" - like a Mac's U.S. layout (Option+2 = ™, Option+e then e = é)
+#   "altgr"          - like AltGr on European Windows layouts
+#   "alt"            - plain Windows Alt
+option_key = "mac_characters"
+# Extra apps (process names, e.g. "mytool.exe") that get terminal or browser shortcuts.
+terminal_apps = []
+browser_apps = []
+
+[game_mode]
+# Step aside while a full-screen game is in front.
+enabled = true
+# Process names that always / never count as games.
+always_off_in = []
+never_off_in = []
+
+[fixes]
+# Release keys that Windows thinks are stuck after fn/globe combinations.
+stuck_keys = true
+
+[brightness]
+# Step size (percent) for stand-in + F1/F2 on monitors that support DDC/CI.
+step_percent = 10
+
+[diagnostics]
+# Write key codes to the log file (letters and digits are never logged). For troubleshooting.
+log_key_events = false

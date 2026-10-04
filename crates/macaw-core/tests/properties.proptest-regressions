@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 9500c10253d6a54f9f6c72ae0811dac25229951ce4d21e933de8a687c7816d2b # shrinks to cfg = Config { enabled: true, apply_to: Apple, keyboard_layout: Us, fn_key: FnKey { stand_in: CapsLock, tap_toggles_caps_lock: false, tap_timeout_ms: 400 }, mac_mode: MacMode { enabled: true, option_key: AltGr, terminal_apps: [], browser_apps: [] }, game_mode: GameMode { enabled: true, always_off_in: [], never_off_in: [] }, fixes: Fixes { stuck_keys: true }, brightness: Brightness { step_percent: 10 }, diagnostics: Diagnostics { log_key_events: false } }, steps = [Toggle(2), Toggle(3), Toggle(9), Toggle(6), Remap(false), Toggle(5), Toggle(0), Toggle(2)]
+cc 35694414900e52daa3280d1202ed84c2de59d2b85b518a2c40a62492a1477173 # shrinks to cfg = Config { enabled: true, apply_to: Apple, keyboard_layout: Us, fn_key: FnKey { stand_in: RightCommand, tap_toggles_caps_lock: false, tap_timeout_ms: 400 }, mac_mode: MacMode { enabled: false, option_key: MacCharacters, terminal_apps: [], browser_apps: [] }, game_mode: GameMode { enabled: true, always_off_in: [], never_off_in: [] }, fixes: Fixes { stuck_keys: true }, brightness: Brightness { step_percent: 10 }, diagnostics: Diagnostics { log_key_events: false } }, steps = [Remap(false), Toggle(1), Remap(true), Reset, Repeat(1)]

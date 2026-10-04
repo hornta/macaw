@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Rust
+        run: |
+          rustup update stable --no-self-update
+          rustup target add aarch64-pc-windows-msvc
+
+      - name: Formatting
+        run: cargo fmt --all --check
+
+      - name: Lints
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Tests
+        run: cargo test --workspace --release
+
+      - name: ARM64 build
+        run: cargo build --release -p macaw --target aarch64-pc-windows-msvc

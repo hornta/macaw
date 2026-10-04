@@ -1,0 +1,14 @@
+[package]
+name = "macaw-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Platform-independent remapping engine for Macaw"
+
+[dependencies]
+serde = { version = "1.0.229", features = ["derive"] }
+toml = "1.1.6"
+
+[dev-dependencies]
+proptest = "1.11.0"

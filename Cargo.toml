@@ -1,0 +1,15 @@
+[workspace]
+resolver = "3"
+members = ["crates/macaw-core", "crates/macaw"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.94"
+license = "MIT"
+description = "Makes Apple Magic Keyboards work the Mac way on Windows"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
