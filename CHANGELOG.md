@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.1.1] - unreleased
+## [0.1.1] - 2026-10-04
 
 - **Fixed:** Telegram and other apps that fill the screen without a border were mistaken for games, which turned
   Mac shortcuts off while they were in front. Borderless full-screen now counts as a game only for programs
