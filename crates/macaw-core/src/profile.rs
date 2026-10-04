@@ -100,21 +100,64 @@ pub fn classify(exe: &str, class: &str, extra_terminals: &[String], extra_browse
     }
 }
 
-/// Whether a full-screen window of this app should put Macaw into game mode.
-pub fn fullscreen_is_game(exe: &str, profile: AppProfile, always: &[String], never: &[String]) -> bool {
-    let exe = normalize_exe(exe);
+/// How the foreground window fills the screen.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Fullscreen {
+    No,
+    /// A borderless window covering its whole monitor: games, but also chat apps, players and viewers.
+    Borderless,
+    /// Exclusive full-screen (Direct3D): games and the like.
+    Exclusive,
+}
+
+/// Folders that game stores and launchers install games into (lower case).
+const GAME_FOLDERS: &[&str] = &[
+    "\\steamapps\\common\\",
+    "\\epic games\\",
+    "\\riot games\\",
+    "\\xboxgames\\",
+    "\\gog galaxy\\games\\",
+    "\\gog games\\",
+    "\\ea games\\",
+    "\\origin games\\",
+    "\\ubisoft game launcher\\games\\",
+    "\\rockstar games\\",
+    "\\battle.net\\",
+    "\\games\\",
+];
+
+/// Whether a program is installed in a game library.
+pub fn in_game_folder(path: &str) -> bool {
+    let path = path.to_ascii_lowercase().replace('/', "\\");
+    GAME_FOLDERS.iter().any(|folder| path.contains(folder))
+}
+
+fn file_name(path: &str) -> &str {
+    path.rsplit(['\\', '/']).next().unwrap_or(path)
+}
+
+/// Whether the app in front should put Macaw into game mode. Apps listed in `always` always do,
+/// even when not full screen. Otherwise exclusive full-screen counts, and borderless full-screen
+/// only for programs installed in a game library: many other apps go borderless full-screen too.
+pub fn is_game(
+    exe_path: &str,
+    profile: AppProfile,
+    fullscreen: Fullscreen,
+    always: &[String],
+    never: &[String],
+) -> bool {
+    let exe = normalize_exe(file_name(exe_path));
     if listed(&exe, always) {
         return true;
     }
-    if listed(&exe, never) || profile != AppProfile::Normal {
+    if fullscreen == Fullscreen::No
+        || listed(&exe, never)
+        || profile != AppProfile::Normal
+        || NOT_GAMES.contains(&exe.as_str())
+    {
         return false;
     }
-    !NOT_GAMES.contains(&exe.as_str())
-}
-
-/// Apps named in `always_off_in` count as games even when they are not full screen.
-pub fn always_game(exe: &str, always: &[String]) -> bool {
-    listed(&normalize_exe(exe), always)
+    fullscreen == Fullscreen::Exclusive || in_game_folder(exe_path)
 }
 
 #[cfg(test)]
@@ -144,23 +187,55 @@ mod tests {
         );
     }
 
+    const VALORANT: &str = r"C:\Riot Games\VALORANT\live\VALORANT.exe";
+    const CS2: &str = r"D:\SteamLibrary\steamapps\common\Counter-Strike Global Offensive\game\bin\win64\cs2.exe";
+    const TELEGRAM: &str = r"C:\Users\me\AppData\Roaming\Telegram Desktop\Telegram.exe";
+
+    fn game(path: &str, fullscreen: Fullscreen) -> bool {
+        is_game(path, AppProfile::Normal, fullscreen, &[], &[])
+    }
+
     #[test]
-    fn games() {
-        assert!(fullscreen_is_game("valorant.exe", AppProfile::Normal, &[], &[]));
-        assert!(!fullscreen_is_game("vlc.exe", AppProfile::Normal, &[], &[]));
-        assert!(!fullscreen_is_game("chrome.exe", AppProfile::Browser, &[], &[]));
-        assert!(!fullscreen_is_game(
-            "game.exe",
-            AppProfile::Normal,
-            &[],
-            &["game".into()]
+    fn borderless_games_are_recognised_by_their_library() {
+        assert!(game(VALORANT, Fullscreen::Borderless));
+        assert!(game(CS2, Fullscreen::Borderless));
+        assert!(game(
+            r"C:\XboxGames\Halo Infinite\Content\HaloInfinite.exe",
+            Fullscreen::Borderless
         ));
-        assert!(fullscreen_is_game(
-            "vlc.exe",
-            AppProfile::Normal,
-            &["VLC.exe".into()],
+        assert!(game(r"E:\Games\Factorio\bin\x64\factorio.exe", Fullscreen::Borderless));
+    }
+
+    #[test]
+    fn borderless_apps_are_not_games() {
+        // Telegram's main window and media viewer are borderless and can fill the screen.
+        assert!(!game(TELEGRAM, Fullscreen::Borderless));
+        assert!(!game(r"C:\Program Files\VideoLAN\VLC\vlc.exe", Fullscreen::Borderless));
+    }
+
+    #[test]
+    fn exclusive_full_screen_is_a_game() {
+        assert!(game(r"C:\Tools\SomeGame\game.exe", Fullscreen::Exclusive));
+        assert!(!game(VALORANT, Fullscreen::No));
+        assert!(!is_game(
+            r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+            AppProfile::Browser,
+            Fullscreen::Exclusive,
+            &[],
             &[]
         ));
-        assert!(always_game("Game.EXE", &["game".into()]));
+    }
+
+    #[test]
+    fn settings_lists_win() {
+        let listed = ["telegram".to_string()];
+        assert!(is_game(TELEGRAM, AppProfile::Normal, Fullscreen::No, &listed, &[]));
+        assert!(!is_game(
+            VALORANT,
+            AppProfile::Normal,
+            Fullscreen::Exclusive,
+            &[],
+            &["valorant.exe".into()]
+        ));
     }
 }

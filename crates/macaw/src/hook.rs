@@ -13,7 +13,7 @@ use std::sync::atomic::Ordering;
 use std::thread::JoinHandle;
 
 use macaw_core::config::{ApplyTo, PrintedLayout};
-use macaw_core::profile::{always_game, classify, fullscreen_is_game};
+use macaw_core::profile::{Fullscreen, classify, is_game};
 use macaw_core::{Action, AppProfile, Config, Ctx, Engine, Input, Key, Out, Typematic};
 use windows_sys::Win32::Foundation::{HANDLE, HWND, LPARAM, LRESULT, RECT, WPARAM};
 use windows_sys::Win32::Graphics::Gdi::{GetMonitorInfoW, MONITOR_DEFAULTTONEAREST, MONITORINFO, MonitorFromWindow};
@@ -493,15 +493,20 @@ impl State {
             let thread = GetWindowThreadProcessId(hwnd, &mut pid);
             (hwnd, pid, thread)
         };
-        let exe = win::process_exe_name(pid).unwrap_or_default();
+        let path = win::process_image_path(pid).unwrap_or_default();
+        let exe = win::file_name(&path);
         let class = win::window_class(hwnd);
         let (profile, game) = {
             let c = self.config.borrow();
             let profile = classify(&exe, &class, &c.mac_mode.terminal_apps, &c.mac_mode.browser_apps);
             let game = c.game_mode.enabled
-                && (always_game(&exe, &c.game_mode.always_off_in)
-                    || (is_fullscreen(hwnd)
-                        && fullscreen_is_game(&exe, profile, &c.game_mode.always_off_in, &c.game_mode.never_off_in)));
+                && is_game(
+                    &path,
+                    profile,
+                    fullscreen(hwnd),
+                    &c.game_mode.always_off_in,
+                    &c.game_mode.never_off_in,
+                );
             (profile, game)
         };
         let blocked = !self.shared.elevated && pid != 0 && win::process_is_elevated(pid);
@@ -514,10 +519,11 @@ impl State {
         if changed {
             self.shared.game_in_front.store(game, Ordering::Relaxed);
             self.shared.admin_app_in_front.store(blocked, Ordering::Relaxed);
+            let name = if exe.is_empty() { "an app" } else { exe.as_str() };
             if game {
-                log_info!("stepping aside for {exe} (full-screen game)");
+                log_info!("stepping aside for {name} (game)");
             } else if blocked {
-                log_info!("{exe} runs as administrator; Macaw can't change keys there without admin rights");
+                log_info!("{name} runs as administrator; Macaw can't change keys there without admin rights");
             }
             self.shared.notify(Notice::State);
         }
@@ -728,29 +734,33 @@ fn device_name(device: HANDLE) -> Option<String> {
     }
 }
 
-/// Exclusive full-screen (D3D), or a borderless window covering its whole monitor.
-fn is_fullscreen(hwnd: HWND) -> bool {
+/// Exclusive full-screen (D3D), a borderless window covering its whole monitor, or neither.
+fn fullscreen(hwnd: HWND) -> Fullscreen {
     // SAFETY: plain queries with properly sized out-structures.
     unsafe {
         let mut state = 0;
         if SHQueryUserNotificationState(&mut state) == 0 && state == QUNS_RUNNING_D3D_FULL_SCREEN {
-            return true;
+            return Fullscreen::Exclusive;
         }
         let style = GetWindowLongPtrW(hwnd, GWL_STYLE) as u32;
         if style & WS_CAPTION == WS_CAPTION || IsZoomed(hwnd) != 0 {
-            return false;
+            return Fullscreen::No;
         }
         let mut rect: RECT = std::mem::zeroed();
         if GetWindowRect(hwnd, &mut rect) == 0 {
-            return false;
+            return Fullscreen::No;
         }
         let mut info: MONITORINFO = std::mem::zeroed();
         info.cbSize = size_of::<MONITORINFO>() as u32;
         if GetMonitorInfoW(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST), &mut info) == 0 {
-            return false;
+            return Fullscreen::No;
         }
         let m = info.rcMonitor;
-        rect.left <= m.left && rect.top <= m.top && rect.right >= m.right && rect.bottom >= m.bottom
+        if rect.left <= m.left && rect.top <= m.top && rect.right >= m.right && rect.bottom >= m.bottom {
+            Fullscreen::Borderless
+        } else {
+            Fullscreen::No
+        }
     }
 }
 

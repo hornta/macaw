@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1] - unreleased
+
+- **Fixed:** Telegram and other apps that fill the screen without a border were mistaken for games, which turned
+  Mac shortcuts off while they were in front. Borderless full-screen now counts as a game only for programs
+  installed by a game store or in a "Games" folder; exclusive full-screen still always counts.
+- Macaw now closes cleanly when the installer upgrades it or Windows signs out.
+
 ## [0.1.0] - 2026-10-04
 
 First preview.

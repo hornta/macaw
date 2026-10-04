@@ -93,8 +93,8 @@ pub fn process_is_elevated(pid: u32) -> bool {
     }
 }
 
-/// The executable file name of a process, e.g. `chrome.exe`.
-pub fn process_exe_name(pid: u32) -> Option<String> {
+/// The full path of a process's program, e.g. `C:\Program Files\Google\Chrome\Application\chrome.exe`.
+pub fn process_image_path(pid: u32) -> Option<String> {
     // SAFETY: bounded buffer; the handle is closed by `Handle`.
     unsafe {
         let process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid);
@@ -107,11 +107,16 @@ pub fn process_exe_name(pid: u32) -> Option<String> {
         if QueryFullProcessImageNameW(process.0, PROCESS_NAME_WIN32, buf.as_mut_ptr(), &mut len) == 0 {
             return None;
         }
-        let path = String::from_utf16_lossy(&buf[..len as usize]);
-        Path::new(&path)
-            .file_name()
-            .map(|name| name.to_string_lossy().into_owned())
+        Some(String::from_utf16_lossy(&buf[..len as usize]))
     }
+}
+
+/// The file name part of a path, e.g. `chrome.exe`.
+pub fn file_name(path: &str) -> String {
+    Path::new(path)
+        .file_name()
+        .map(|name| name.to_string_lossy().into_owned())
+        .unwrap_or_default()
 }
 
 pub fn window_class(hwnd: HWND) -> String {

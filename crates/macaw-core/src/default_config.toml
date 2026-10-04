@@ -44,9 +44,11 @@ terminal_apps = []
 browser_apps = []
 
 [game_mode]
-# Step aside while a full-screen game is in front.
+# Step aside while a game is in front: games in exclusive full screen, and borderless full-screen
+# games installed by a game store (Steam, Epic, Riot, Xbox, GOG, EA, Ubisoft, Rockstar, Battle.net)
+# or in a folder called "Games".
 enabled = true
-# Process names that always / never count as games.
+# Process names that always count as games (even in a window) / never count as games.
 always_off_in = []
 never_off_in = []
 
