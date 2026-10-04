@@ -122,12 +122,9 @@ jobs:
           } else {
             '> This build is not code-signed yet, so Windows SmartScreen may warn before it runs: choose **More info**, then **Run anyway**. Signed builds are on the way.'
           }
-          $notes = @(
-            $section, '',
-            '**Download:** `Macaw-' + $env:VERSION + '-setup.exe` (installer for x64 and ARM64 PCs), or a portable zip.', '',
-            $signing, '',
-            'Checksums are in `SHA256SUMS.txt`.'
-          ) -join "`n"
+          # (In PowerShell a comma binds tighter than +, so build each line before making the list.)
+          $download = '**Download:** `Macaw-{0}-setup.exe` (installer for x64 and ARM64 PCs), or a portable zip.' -f $env:VERSION
+          $notes = @($section, '', $download, '', $signing, '', 'Checksums are in `SHA256SUMS.txt`.') -join "`n"
           Set-Content release-notes.md $notes
           gh release create $env:GITHUB_REF_NAME --draft --title "Macaw $env:VERSION" --notes-file release-notes.md `
             "dist/Macaw-$env:VERSION-setup.exe" "dist/Macaw-$env:VERSION-x64-portable.zip" "dist/Macaw-$env:VERSION-arm64-portable.zip" dist/SHA256SUMS.txt
